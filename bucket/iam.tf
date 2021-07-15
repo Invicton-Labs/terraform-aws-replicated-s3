@@ -1,7 +1,7 @@
 // A role for the S3 buckets to use to do cross-region replication
 resource "aws_iam_role" "replication" {
-    // Only create the role if the bucket has any replication destinations
-    count = length(var.replication_destination_arns) > 0 ? 1 : 0
+  // Only create the role if the bucket has any replication destinations
+  count = var.create && length(var.replication_destination_arns) > 0 ? 1 : 0
   name_prefix        = "${local.shortened_role_name_prefix}-"
   path               = "/s3-replication/"
   assume_role_policy = jsonencode({
@@ -35,7 +35,7 @@ resource "aws_iam_role_policy" "replication" {
                 "s3:GetReplicationConfiguration"
               ]
               Resource = [
-                  aws_s3_bucket.bucket.arn
+                  aws_s3_bucket.bucket[0].arn
               ]
           },
           {
@@ -46,7 +46,7 @@ resource "aws_iam_role_policy" "replication" {
                 "s3:GetObjectVersionTagging"
               ]
               Resource = [
-                "${aws_s3_bucket.bucket.arn}/*"
+                "${aws_s3_bucket.bucket[0].arn}/*"
               ]
           },
           // Allow replicating INTO each destination ARN

@@ -1,16 +1,29 @@
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 3.49"
+    }
+  }
+}
+
 // Get the canonical user ID
 data "aws_canonical_user_id" "account" {}
 
+data "aws_caller_identity" "current" {}
+
 locals {
-    shortened_role_name_prefix = length(var.bucket_config.bucket) <= 31 ? var.bucket_config.bucket : "${substr(var.bucket_config.bucket, 0, 15)}.${substr(var.bucket_config.bucket, length(var.bucket_config.bucket) - 15, 15)}"
-    versioning_enabled = 
+    shortened_role_name_prefix = var.bucket_config == null ? null : (length(var.bucket_config.bucket) <= 31 ? var.bucket_config.bucket : "${substr(var.bucket_config.bucket, 0, 15)}.${substr(var.bucket_config.bucket, length(var.bucket_config.bucket) - 15, 15)}")
+    versioning_enabled = var.bucket_config == null ? null : (
         (var.bucket_config.replication_configuration == null ? false : length(var.bucket_config.replication_configuration.rules) > 0) 
             || 
-        length(var.replication_source_arns) > 0 ? true : (var.bucket_config.versioning == null ? false : var.bucket_config.versioning.enabled)
-    versioning_forced = local.versioning_enabled && (var.bucket_config.versioning == null ? true : !var.bucket_config.versioning.enabled)
-    acl_grants = concat(var.bucket_config.grants == null ? [] : var.bucket_config.grants,
+        (length(var.replication_source_arns) > 0 ? true : (var.bucket_config.versioning == null ? false : var.bucket_config.versioning.enabled))
+    )
+    versioning_forced = var.bucket_config == null ? null : (local.versioning_enabled && (var.bucket_config.versioning == null ? true : !var.bucket_config.versioning.enabled))
+    acl_grants = var.bucket_config == null ? null : concat(var.bucket_config.grants == null ? [] : var.bucket_config.grants,
         // If the bucket should enable cloudfront logging to it, create an ACL for that
-        (var.bucket_config.enable_cloudfront_logging == null ? false : bucvar.bucket_configket.enable_cloudfront_logging) ? [{
+        (var.bucket_config.enable_cloudfront_logging == null ? false : var.bucket_config.enable_cloudfront_logging) ? [{
             // The CloudFront account canonical ID (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html)
             id          = "c4c1ede66af53448b93c283ce9448c4ba468c9432aa01d700d3878632f77d2d0"
             permissions = ["FULL_CONTROL"]

@@ -1,4 +1,5 @@
 resource "aws_s3_bucket" "bucket" {
+    count = var.create ? 1 : 0
   bucket = var.bucket_config.bucket
   acl = var.bucket_config.acl
 
@@ -36,7 +37,7 @@ resource "aws_s3_bucket" "bucket" {
   }
 
   dynamic "versioning" {
-      for_each = var.bucket_config.versioning != null ? [var.bucket_config.versioning] : []
+      for_each = local.versioning_enabled ? (var.bucket_config.versioning != null ? [var.bucket_config.versioning] : [{mfa_delete = null}]) : []
       content {
           enabled = local.versioning_enabled
           mfa_delete = versioning.value.mfa_delete
@@ -153,7 +154,7 @@ resource "aws_s3_bucket" "bucket" {
 
 data "aws_iam_policy_document" "bucket" {
     // Only create the resource if there was a bucket at this index AND there's at least 1 replication source for this bucket
-    count = length(var.replication_source_arns) > 0 ? 1 : 0
+    count = var.create && length(var.replication_source_arns) > 0 ? 1 : 0
   source_json = var.bucket_config.policy
 
   statement {
@@ -164,7 +165,7 @@ data "aws_iam_policy_document" "bucket" {
         "s3:ReplicateTags"
     ]
     resources = [
-        "${aws_s3_bucket.bucket.arn}/*"
+        "${aws_s3_bucket.bucket[0].arn}/*"
     ]
     
     principals {
@@ -176,13 +177,13 @@ data "aws_iam_policy_document" "bucket" {
 
 resource "aws_s3_bucket_policy" "bucket" {
   count = length(data.aws_iam_policy_document.bucket)
-  bucket = aws_s3_bucket.bucket.id
+  bucket = aws_s3_bucket.bucket[0].id
   policy = data.aws_iam_policy_document.bucket[count.index].json
 }
 
 resource "aws_s3_bucket_public_access_block" "bucket" {
-  count = var.bucket_config.public_access_block != null ? 1 : 0
-  bucket = aws_s3_bucket.bucket.id
+  count = var.create ? (var.bucket_config.public_access_block != null ? 1 : 0) : 0
+  bucket = aws_s3_bucket.bucket[0].id
   block_public_acls   = var.bucket_config.public_access_block.block_public_acls
   block_public_policy = var.bucket_config.public_access_block.block_public_policy
   ignore_public_acls = var.bucket_config.public_access_block.ignore_public_acls
