@@ -1,27 +1,52 @@
+/*
+CREATED BY A TEMPLATE
+DO NOT EDIT MANUALLY
+*/
+
 locals {
-    bucket_limit = ${num_buckets}
-    bucket_modules = [
-%{ for idx in range(num_buckets) ~}
-        module.bucket_${idx},
+    region_bucket_modules = {
+%{ for region in regions ~}
+        ${region} = module.buckets_${region},
 %{ endfor ~}       
-    ]
-    replication_roles = [
-%{ for idx in range(num_buckets) ~}
-        length(var.buckets) > ${idx} ? module.bucket_${idx}.replication_role : null,
+    }
+    
+    region_replication_modules = {
+%{ for region in regions ~}
+        ${region} = module.replications_${region},
 %{ endfor ~}       
-    ]
+    }
 }
 
-%{ for idx in range(num_buckets) ~}
-module "bucket_${idx}" {
+%{ for region in regions ~}
+module "buckets_${region}" {
     source = "./bucket"
-    create = length(var.buckets) > ${idx}
-    providers = {
-        aws = aws.bucket_${idx}
+    for_each = {
+        for k, v in var.bucket_regions:
+        k => v
+        if v == "${region}"
     }
-    bucket_config = length(var.buckets) > ${idx} ? var.buckets[${idx}] : null
-    replication_destination_arns = length(var.buckets) > ${idx} ? local.replication_destination_arns[${idx}] : []
-    replication_source_arns = length(var.buckets) > ${idx} ? local.replication_source_arns[${idx}] : []
-    replication_source_role_arns = length(var.buckets) > ${idx} ? local.replication_source_role_arns[${idx}] : []
+    providers = {
+        aws = aws.${region}
+    }
+    bucket_config = var.bucket_configs[each.key]
+    replication_destination_arns = local.replication_destination_arns[each.key]
+    replication_source_arns = local.replication_source_arns[each.key]
 }
+
+module "replications_${region}" {
+    source = "./replication"
+    for_each = {
+        for k, v in var.bucket_regions:
+        k => v
+        if v == "${region}"
+    }
+    providers = {
+        aws = aws.${region}
+    }
+    bucket_config = var.bucket_configs[each.key]
+    replication_role_arn = local.bucket_modules[each.key].replication_role.arn
+    bucket_id = local.bucket_modules[each.key].bucket.id
+    bucket_arns = local.bucket_arns
+}
+
 %{ endfor ~}

@@ -1,25 +1,30 @@
-%{ for idx in range(num_buckets) ~}
+/*
+CREATED BY A TEMPLATE
+DO NOT EDIT MANUALLY
+*/
+
+%{ for region in regions ~}
 provider "aws" {
-    alias = "bucket_${idx}"
-    access_key = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.access_key : var.buckets[0].provider_config.access_key
-    secret_key = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.secret_key : var.buckets[0].provider_config.secret_key
-    region = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.region : var.buckets[0].provider_config.region
-    profile = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.profile : var.buckets[0].provider_config.profile
-    shared_credentials_file = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.shared_credentials_file : var.buckets[0].provider_config.shared_credentials_file
-    token = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.token : var.buckets[0].provider_config.token
-    max_retries = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.max_retries : var.buckets[0].provider_config.max_retries
-    allowed_account_ids = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.allowed_account_ids : var.buckets[0].provider_config.allowed_account_ids
-    forbidden_account_ids = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.forbidden_account_ids : var.buckets[0].provider_config.forbidden_account_ids
-    insecure = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.insecure : null
-    skip_credentials_validation = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.skip_credentials_validation : true
-    skip_get_ec2_platforms = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.skip_get_ec2_platforms : true
-    skip_region_validation = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.skip_region_validation : true
-    skip_requesting_account_id = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.skip_requesting_account_id : true
-    skip_metadata_api_check = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.skip_metadata_api_check : true
-    s3_force_path_style = length(var.buckets) > ${idx} ? var.buckets[${idx}].provider_config.s3_force_path_style : null
+    alias = "${region}"
+    access_key = var.provider_config.access_key
+    secret_key = var.provider_config.secret_key
+    region = "${region}"
+    profile = var.provider_config.profile
+    shared_credentials_file = var.provider_config.shared_credentials_file
+    token = var.provider_config.token
+    max_retries = var.provider_config.max_retries
+    allowed_account_ids = var.provider_config.allowed_account_ids
+    forbidden_account_ids = var.provider_config.forbidden_account_ids
+    insecure = var.provider_config.insecure
+    skip_credentials_validation = var.provider_config.skip_credentials_validation
+    skip_get_ec2_platforms = var.provider_config.skip_get_ec2_platforms
+    skip_region_validation = var.provider_config.skip_region_validation
+    skip_requesting_account_id = var.provider_config.skip_requesting_account_id
+    skip_metadata_api_check = var.provider_config.skip_metadata_api_check
+    s3_force_path_style = var.provider_config.s3_force_path_style
 
     dynamic "endpoints" {
-        for_each = length(var.buckets) > ${idx} ? (var.buckets[${idx}].provider_config.endpoints == null ? [] : [var.buckets[${idx}].provider_config.endpoints]) : {}
+        for_each = var.provider_config.endpoints == null ? [] : [var.provider_config.endpoints]
         content {
             accessanalyzer = endpoints.value.accessanalyzer
             acm = endpoints.value.acm
@@ -56,7 +61,7 @@ provider "aws" {
             codedeploy = endpoints.value.codedeploy
             codepipeline = endpoints.value.codepipeline
             codestarconnections = endpoints.value.codestarconnections
-            codestarnotifications = endpoints.value.codestarnotifications
+            //codestarnotifications = endpoints.value.codestarnotifications
             cognitoidentity = endpoints.value.cognitoidentity
             cognitoidp = endpoints.value.cognitoidp
             configservice = endpoints.value.configservice
@@ -137,7 +142,7 @@ provider "aws" {
             personalize = endpoints.value.personalize
             pinpoint = endpoints.value.pinpoint
             pricing = endpoints.value.pricing
-            prometheusservice = endpoints.value.prometheusservice
+            //prometheusservice = endpoints.value.prometheusservice
             qldb = endpoints.value.qldb
             quicksight = endpoints.value.quicksight
             ram = endpoints.value.ram
@@ -185,7 +190,7 @@ provider "aws" {
     }
 
     dynamic "assume_role" {
-        for_each = length(var.buckets) > ${idx} ? (var.buckets[${idx}].provider_config.assume_role == null ? [] : [var.buckets[${idx}].provider_config.assume_role]) : []
+        for_each = var.provider_config.assume_role == null ? [] : [var.provider_config.assume_role]
         content {
             duration_seconds = assume_role.duration_seconds
             external_id = assume_role.external_id
@@ -199,18 +204,19 @@ provider "aws" {
     }
 
     dynamic "default_tags" {
-        for_each = length(var.buckets) > ${idx} ? (var.buckets[${idx}].provider_config.default_tags == null ? [] : [var.buckets[${idx}].provider_config.default_tags]) : []
+        for_each = var.provider_config.default_tags == null ? [] : [var.provider_config.default_tags]
         content {
             tags = default_tags.tags
         }
     }
 
     dynamic "ignore_tags" {
-        for_each = length(var.buckets) > ${idx} ? (var.buckets[${idx}].provider_config.ignore_tags == null ? [] : [var.buckets[${idx}].provider_config.ignore_tags]) : []
+        for_each = var.provider_config.ignore_tags == null ? [] : [var.provider_config.ignore_tags]
         content {
             keys = ignore_tags.keys
             key_prefixes = ignore_tags.key_prefixes
         }
     }
 }
+
 %{ endfor ~}
